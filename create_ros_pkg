@@ -1,0 +1,56 @@
+#!/bin/bash
+
+function usage() {
+cat <<_EOT_
+
+Usage:
+  $ ./create_ros_pkg [OPTION] distro workspace_name package_name　depend1 depend2 ...
+
+Description:
+  新しいROSパッケージを作成する
+
+Options:
+  -h, --help		ヘルプ
+	
+Arguments:
+  distro		使用するROSのdistro (e.g. kinetic, jade, indigo, hydro, ...)
+  workspace_name	ワークスペースの名前 (ros/[workspace_name]/src/...）
+  package_name		パッケージの名前 (ros/[workspace_name]/src/[package_name]/...)
+  depend1 depend2 ...	依存パッケージ (e.g. roscpp rospy std_msgs geometry_msgs sensor_msgs tf tf2... )
+
+_EOT_
+exit 1
+}
+
+
+case "$1" in
+"-h" | "--help" ) 
+  usage
+  ;;
+esac
+
+if [ -z "${MY_ROS_HOME+x}" ] ; then
+  echo ""
+  echo "ERROR"
+  echo "  Set \$MY_ROS_HOME with '$ export MY_ROS_HOME=path/to/roshome' "
+  echo ""
+  exit 1
+fi
+
+distro=$1
+workspaceName=$2
+packageName=$3
+
+source /opt/ros/$distro/setup.bash
+mkdir -p ${MY_ROS_HOME}/$workspaceName/src
+cd ${MY_ROS_HOME}/$workspaceName/src
+catkin_init_workspace
+cd ${MY_ROS_HOME}/$workspaceName
+catkin_make
+source devel/setup.bash
+cd ${MY_ROS_HOME}/$workspaceName/src
+if [ "$#" > "3" ]; then
+catkin_create_pkg ${@:3}
+else
+catkin_create_pkg $packageName
+fi

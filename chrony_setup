@@ -1,0 +1,56 @@
+#!/bin/bash
+
+function usage() {
+cat <<_EOT_
+
+Usage:
+  $ ./chrony_setup [-0|-h] ntpserver_machine_ip
+
+Description:
+  他マシンと時間同期するようのbash
+
+Options:
+  -0	通常の状態に戻る
+  -h	ヘルプ
+	
+Arguments:
+　　ntpserver_machine_ip	NTPサーバのIP
+
+_EOT_
+exit 1
+}
+
+function comfirm() {
+  echo ""
+  echo "To comfirm synchronization: $ ntpdate -q $1"
+  echo "To comfirm chrony settings: $ chronyc tracking"
+  echo ""
+}
+
+if [ ! -e /etc/chrony/chrony.conf.default ]; then
+  sudo cp /etc/chrony/chrony.conf /etc/chrony/chrony.conf.default
+fi
+
+case "$1" in
+"-0") 
+  sudo rm /etc/chrony/chrony.conf
+  sudo cp /etc/chrony/chrony.conf.default /etc/chrony/chrony.conf
+  sudo /etc/init.d/chrony restart
+  comfirm $1
+  ;;    
+"-h") 
+  usage
+  ;;
+ *  )
+  if [ "$#" = "1" ]; then
+    sudo rm /etc/chrony/chrony.conf
+    sudo cp /etc/chrony/chrony.conf.default /etc/chrony/chrony.conf
+    sudo echo "server $1 minpoll 0 maxpoll 5 maxdelay .05" >> /etc/chrony/chrony.conf
+    sudo /etc/init.d/chrony restart
+    comfirm $1
+  else
+    echo "Try to enter the -h option." 
+  fi
+  ;;
+esac
+

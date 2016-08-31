@@ -1,0 +1,88 @@
+#!/bin/bash
+
+function usage() {
+cat <<_EOT_
+
+Usage:
+  $ ./ros_setup [-0|-h] my_ip master_ip
+
+Description:
+  複数台PCでROSする用の設定用bash．
+  .bashrcに書き込むので設定は1度行うと保たれる．
+
+Options:
+  -0	通常のlocalhostをマスタとするスタンドアローンモードにする
+  -h	ヘルプ
+	
+Arguments:
+  my_ip		このPCのIPアドレス
+  master_ip	マスタとなるPCのIPアドレス
+
+_EOT_
+exit 1
+}
+
+
+function set_localhost_master() {
+{
+  echo "#!/bin/bash"
+  echo ""
+  echo "unset ROS_IP"
+  echo "export ROS_MASTER_URI=http://localhost:11311/"
+} >"$1"/"$2"
+}
+
+function set_this_machine_master() {
+{
+  echo "#!/bin/bash"
+  echo ""
+  echo "export ROS_IP=$3"
+  echo "export ROS_MASTER_URI=http://localhost:11311/"
+} >"$1"/"$2"
+}
+
+function set_other_machine_master() {
+{
+  echo "#!/bin/bash"
+  echo ""
+  echo "export ROS_IP=$3"
+  echo "export ROS_MASTER_URI=http://$4:11311/"
+} >"$1"/"$2"
+}
+
+
+
+bash_folder=$HOME/.ros/ros_ip_setup
+setup_bash=ros_ip_setup.bash 
+
+if [ ! -e $bash_folder ]; then
+  mkdir $bash_folder
+  touch $bash_folder/$setup_bash  
+  echo "source $bash_folder/$setup_bash" >> ~/.bashrc
+fi
+
+: > $bash_folder/$setup_bash
+
+case "$1" in
+"-0") 
+  set_localhost_master $bash_folder $setup_bash 
+  ;;    
+"-h") 
+  usage
+  ;;
+ *  )
+  if [ "$#" = "2" ]; then
+    if [ $1 != $2 ]; then
+      set_other_machine_master $bash_folder $setup_bash $1 $2
+    elif [ $1 = $2 -o $2 = "localhost" ]; then
+      set_this_machine_master $bash_folder $setup_bash $1 
+    fi
+  else
+    echo "Try to enter the -h option." 
+  fi
+  ;;
+esac
+
+echo "Once do '$ source ~/.bashrc'"
+
+
